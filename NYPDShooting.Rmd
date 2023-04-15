@@ -1,0 +1,87 @@
+---
+title: "NYPD.Shooting"
+author: "Mark Izzo"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-03-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Import Libraries
+``` {r library}
+library(tidyverse)
+library(lubridate)
+```
+## Import data.
+
+```{r get_nypd_data}
+url_in <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+```
+## Read in CSV data
+```{r import_data, message=FALSE}
+shooting_incidents <- read.csv(url_in)
+```
+## Clean data -- select relevant columns, change date format.  Show summary.
+```{r clean_data}
+shooting_data <- shooting_incidents %>%
+  select(OCCUR_DATE,BORO,VIC_AGE_GROUP,VIC_SEX,VIC_RACE, STATISTICAL_MURDER_FLAG) %>%
+  mutate(OCCUR_DATE = mdy(OCCUR_DATE))
+
+summary(shooting_data)
+```  
+## Visualization and Analysis
+
+Which part of New York City have the most shooting incidents occurred in?
+
+``` {r no_by_boro}
+by_boro <- shooting_data %>%
+  group_by(BORO, STATISTICAL_MURDER_FLAG) %>%
+  select(BORO, STATISTICAL_MURDER_FLAG)
+
+by_boro %>%
+  ggplot(aes(x = BORO, fill = STATISTICAL_MURDER_FLAG)) +
+  geom_bar() +
+  labs(title = "Shooting Incidents by Borough",
+       x = "Borough",
+       y = "Number of Incidents",
+       fill = "Fatality") +
+  theme_minimal()
+```
+
+
+
+
+Which Age/Race group(s) are most likely to be victims of shootings in NYC?
+
+```{r no_by_race_age}
+by_race_age <- shooting_data %>%
+  group_by(VIC_RACE, VIC_AGE_GROUP) %>%
+  select(VIC_RACE, VIC_AGE_GROUP)
+
+by_race_age %>%
+  ggplot(aes(x = VIC_AGE_GROUP, fill = VIC_RACE)) +
+  geom_bar() +
+  labs(title = "Shooting Incidents by Victim Race/Age",
+       x = "Age Group of Victim",
+       y = "Number of Incidents",
+       fill = "Race") +
+  theme_minimal() +
+  coord_flip()
+```
+
+
+As we can see from the data, the borough of Brooklyn has the distinction of being the area of New York City that has both the most shootings and the most murders.
+
+As for age and race blacks aged 18-44 account for most of the shooting victims in the city, by far.
+
+
+## BIAS
+
+I don't believe that there is a lot of data bias in this scenario.  The data is simply based on police statistics and while one could argue that there might be a reason to report skewed statistics, I don't believe that this is the case here.
+
+Simply looking at the disproportionate number of black victims, one could assume that race was a primary concern in these crimes.  What the data doesn't show, however, is the overall crime rates in the neighborhoods and what underlying causes there might be, such as poverty and drug or alcohol abuse.
+
+Furthermore, it's important to remember that these statistics are about incidents in which there was police involvement.  We do not know how many shooting incidents escaped the notice of police, or went unreported.
